@@ -1,0 +1,327 @@
+version: "1.0"
+name: "AIM – AI Engineering Manifest"
+tagline: "Einfach machen. Aber richtig."
+description: >
+  Das AIM ist das kollektive Hackathon-Wissen unseres Teams,
+  destilliert in maschinenlesbare Checks. Es wird zu Beginn jedes
+  Projekts ausgeführt und stellt sicher, dass wir unsere eigenen
+  Learnings nicht wieder vergessen.
+
+# ─── PHASEN ───────────────────────────────────────────────────────────────────
+phases:
+
+  # ── 1. PRE-HACKATHON ────────────────────────────────────────────────────────
+  pre_hackathon:
+    label: "Pre-Hackathon Setup"
+    emoji: "🏗️"
+    description: "Muss abgeschlossen sein BEVOR der Hackathon beginnt."
+    blocking: true
+    checks:
+
+      - id: infra_smoke_test
+        title: "Infra Smoke-Test bestanden"
+        description: >
+          VMs starten, Repo ist zugänglich, Secrets sind gesetzt,
+          Docker läuft. Kein Rätselraten mehr ab Stunde 1.
+        prompt: >
+          Check whether the project has a working infrastructure setup.
+          Look for a Makefile, docker-compose.yml, or IaC config in /infra.
+          Verify .env.example exists and list any keys that appear unset.
+          Report: what works, what's missing, what must be fixed before proceeding.
+        anti_pattern: "VPN-Probleme, fehlende API-Keys oder Repo-Zugänge erst beim Hackathon merken."
+        blocking: true
+
+      - id: api_keys_provisioned
+        title: "API Keys & Zugänge vollständig beschafft"
+        description: >
+          Alle benötigten Zugänge sind vorhanden. Im Behördenkontext
+          extra Zeit einplanen – das dauert immer länger als gedacht.
+        prompt: >
+          Parse .env.example for all required environment variables.
+          For each variable, check if a value is set in .env or the environment.
+          List: (a) keys that are present, (b) keys that are missing.
+          If any are missing, block and ask the user to provide them before continuing.
+        anti_pattern: "Einen API-Key 'mal schnell' während des Hackathons zu beantragen."
+        blocking: true
+
+  # ── 2. KICKOFF ──────────────────────────────────────────────────────────────
+  kickoff:
+    label: "Kickoff – Stunde 1"
+    emoji: "🚀"
+    description: "Die ersten 60 Minuten entscheiden über den Rest."
+    blocking: true
+    checks:
+
+      - id: real_data_first
+        title: "Echte Daten gesichtet vor erstem Code"
+        description: >
+          Mock Data verführt dazu, auf Sand zu bauen. Wenn die echten
+          Daten kommen, ist der halbe Code Müll. Erst schauen, dann bauen.
+        prompt: >
+          Ask the user: "Have you looked at the real challenge data yet?
+          What format is it in, what are the key fields, what's missing or messy?"
+          If the user says no: block and ask them to inspect the data first.
+          If yes: ask them to summarize what they found in 2-3 sentences.
+        anti_pattern: "Direkt mit Mock Data loslegen und die echten Daten als 'kommt später' behandeln."
+        blocking: true
+
+      - id: challenge_one_sentence
+        title: "Challenge in einem Satz – Konsens erzwungen"
+        description: >
+          Jeder hat ein leicht anderes Modell der Challenge im Kopf.
+          Einen gemeinsamen Satz zu formulieren erzwingt Alignment.
+          Wenn es keinen Konsens gibt, ist das das Signal.
+        prompt: >
+          Ask each team member (or the user acting for the team) to complete this sentence:
+          "We are building [WHAT] for [WHO] that solves [WHICH PROBLEM]."
+          If the answers diverge, surface the differences and facilitate alignment.
+          Do not proceed until there is one agreed sentence.
+        anti_pattern: "Alle nicken, aber jeder meint etwas anderes. Das rächt sich in Stunde 6."
+        blocking: true
+
+      - id: alignment_timebox
+        title: "Alignment-Phase auf max. 30 Minuten begrenzt"
+        description: >
+          Analysis Paralysis killt Momentum. Diskussionen haben einen
+          Wert, aber ab einem Punkt kosten sie mehr als sie bringen.
+        prompt: >
+          Remind the team: the alignment phase must end within 30 minutes.
+          Ask: "What time did you start? What time is the cutoff?"
+          If the team has been discussing for more than 30 minutes without
+          a decision, flag it and push for a timebox decision.
+        anti_pattern: "Stundenlang Papier schwärzen statt zu bauen. Einfach machen."
+        blocking: false
+
+      - id: challenge_owner_contact
+        title: "Kontakt zu Challenge-Gebenden in ersten 2 Stunden"
+        description: >
+          Die Challenge-Gebenden sind die inoffizielle Jury. Persönlicher
+          Kontakt in den ersten Stunden gibt euch kontinuierliches Feedback
+          und einen unfairen Vorteil gegenüber Teams die raten.
+        prompt: >
+          Ask: "Has the team introduced themselves to the challenge owners yet?
+          Do you have a direct line (Slack, Discord, in-person)?"
+          If not: block and prompt the team to initiate contact NOW.
+          Suggest asking them: "What would a perfect solution look like for you?"
+        anti_pattern: "Die Challenge-Gebenden nur beim Briefing und beim Pitch sehen."
+        blocking: true
+
+      - id: roles_and_tracks
+        title: "Rollen & parallele Tracks definiert"
+        description: >
+          Klare Ownership von Anfang an verhindert Merge-Chaos in Stunde 6.
+          Jeder weiß was er baut und wer was integriert.
+        prompt: >
+          Ask the team to assign the following roles:
+          - Integrator (owns the main branch, merges, resolves conflicts)
+          - Pitcher (owns the presentation and story, starts at 50% of hackathon time)
+          - Track Leads (each person owns one module/component)
+          Ask: "Who owns what? What are the interfaces between modules?"
+          Document the answers.
+        anti_pattern: "Alle bauen irgendwie, niemand ist verantwortlich, am Ende gibt es Merge-Konflikte und niemand kennt den ganzen Stack."
+        blocking: false
+
+  # ── 3. EXECUTION ────────────────────────────────────────────────────────────
+  execution:
+    label: "Execution – laufende Checks"
+    emoji: "⚙️"
+    description: "Wiederkehrend prüfen – nicht nur einmal."
+    blocking: false
+    checks:
+
+      - id: module_ownership
+        title: "Modul-Ownership & Schnittstellenvertrag klar"
+        description: >
+          Merge Conflicts entstehen nicht durch Git – sie entstehen
+          durch fehlendes Ownership. Wer besitzt welchen Teil des Codes?
+        prompt: >
+          Review the current codebase structure.
+          For each top-level module or directory, ask: "Who owns this?
+          What is the interface to other modules (inputs, outputs, APIs)?"
+          Flag any modules without a clear owner or undefined interfaces.
+        anti_pattern: "Zwei Personen arbeiten gleichzeitig an ähnlichen Funktionen ohne Absprache."
+        blocking: false
+
+      - id: challenge_realignment
+        title: "Challenge-Realignment (alle ~2-3 Stunden)"
+        description: >
+          Das Challenge-Verständnis driftet ab. Nicht einmalig checken –
+          regelmäßig. Besonders nach intensiven Bau-Phasen.
+        prompt: >
+          Ask each team member: "In one sentence: what are we building and why?"
+          Compare answers. If they diverge from the original alignment sentence,
+          surface the delta. Facilitate a quick (5-minute max) re-alignment.
+          This is a recurring check – set a reminder for every 2-3 hours.
+        anti_pattern: "Annehmen, dass alle noch das gleiche bauen. In Stunde 8 merken, dass zwei Tracks inkompatibel sind."
+        blocking: false
+
+      - id: no_solo_tunneling
+        title: "Kein Solo-Tunneling länger als 2 Stunden"
+        description: >
+          Wer zu lange alleine hängt verliert den Anschluss ans Team –
+          und bremst andere, die auf seinen Output warten.
+        prompt: >
+          Scan for signs of solo-tunneling: is anyone silent, unresponsive,
+          or blocked without asking for help?
+          Ask: "Is there anyone on the team who hasn't synced in the last 2 hours?"
+          If yes: trigger a check-in.
+        anti_pattern: "Jemand arbeitet 4 Stunden still an einem Feature, das am Ende nicht passt oder schon doppelt gebaut wurde."
+        blocking: false
+
+      - id: experiment_window
+        title: "Neue Technologie: Go/No-Go nach 4-6 Stunden"
+        description: >
+          Neue Tools fühlen sich aufregend an, haben aber Kinderkrankheiten.
+          4-6 Stunden Experiment-Fenster – dann Entscheidung, kein 'mal schauen'.
+          Bewährtes schlägt Fancy-but-buggy.
+        prompt: >
+          If a new tool or technology is being evaluated, ask:
+          "When did the experiment start? What is the Go/No-Go time?"
+          At the deadline, force a binary decision:
+          (a) It works well enough → commit and move on
+          (b) It doesn't → switch to the proven alternative NOW
+          Ask also: "Is there a proven alternative that could replace this?"
+        anti_pattern: "Das neue fancy Framework von vor zwei Wochen mit Kinderkrankheiten verwenden, weil es cool klingt."
+        blocking: false
+
+      - id: pause_slots_protected
+        title: "Pausen-Slots geplant & gegen Feature-Creep geschützt"
+        description: >
+          Erschöpfte Teams machen schlechtere Entscheidungen und schlechtere Pitches.
+          Pausen sind keine Schwäche – sie sind Ressourcenmanagement.
+        prompt: >
+          Ask: "Are there dedicated break times in the schedule?
+          Has anyone skipped their planned break for 'just one more feature'?"
+          If breaks are being skipped: flag it. Enforce the pause.
+          Remind the team: a rested 10-minute pitch beats an exhausted 20-minute demo.
+        anti_pattern: "Durcharbeiten bis zum Pitch. Um 3 Uhr morgens noch Features bauen. Dann einen miserablen Pitch halten."
+        blocking: false
+
+      - id: sleep_cutoff
+        title: "Sleep-Cutoff eingehalten"
+        description: >
+          Schlafentzug kostet mehr als er bringt. Ein Feature mehr,
+          aber ein Pitch der nichts taugt. Die Entscheidung ist klar.
+        prompt: >
+          Ask: "Has the team agreed on a sleep cutoff time?
+          Is anyone planning to work through the night?"
+          If yes: ask them to weigh: 'what will you gain vs what will your pitch cost?'
+          Recommended cutoff: latest 2am for any hackathon with a next-day pitch.
+        anti_pattern: "Die ganze Nacht durcharbeiten und dann einen Pitch halten, der die Lösung nicht würdig ist."
+        blocking: false
+
+  # ── 4. PRE-PITCH ────────────────────────────────────────────────────────────
+  pre_pitch:
+    label: "Pre-Pitch – ab 50% der Zeit"
+    emoji: "🎤"
+    description: "Story kommt vor Technik. Immer."
+    blocking: true
+    checks:
+
+      - id: pitch_started_midway
+        title: "Pitch-Vorbereitung ab 50% der Hackathon-Zeit"
+        description: >
+          Der Pitch wird nicht in der letzten Stunde gut. Er wird gut,
+          wenn er Zeit hatte zu reifen. Spätestens zur Hälfte beginnen.
+        prompt: >
+          Check: has the team started on the pitch yet?
+          If the hackathon is more than 50% over and no pitch work has begun: BLOCK.
+          Ask the Pitcher to stop coding and start building the narrative NOW.
+          One frame: "What is the problem? What is our solution? Why does it matter?"
+        anti_pattern: "In der letzten Stunde improvisiert pitchen. Die Lösung ist gut, kommt aber nicht rüber."
+        blocking: true
+
+      - id: story_before_tech
+        title: "Story > Technik im Pitch"
+        description: >
+          Die Jury bewertet Impact, nicht Architekturdiagramme.
+          Wenn Slide 2 ein Systemdiagramm zeigt, ist das ein Warnsignal.
+        prompt: >
+          Review the current pitch draft or outline.
+          Flag any slide that leads with architecture, tech stack, or implementation details
+          before establishing: (a) the problem, (b) who has it, (c) what it costs them.
+          Suggest restructuring: Problem → Solution → Demo → Impact → Tech (optional).
+        anti_pattern: "Mit Architekturdiagrammen anfangen. Die Jury schläft ein bevor der Impact klar ist."
+        blocking: false
+
+      - id: feature_freeze
+        title: "Feature-Freeze-Zeitpunkt definiert"
+        description: >
+          Ab einem bestimmten Punkt macht polishen mehr aus als neue Features.
+          Wer keinen Feature-Freeze hat, baut bis zur letzten Minute.
+        prompt: >
+          Ask: "What is the feature freeze time? After this point: no new features,
+          only polish, bug fixes, and demo preparation."
+          If not set: set it now. Recommended: 2-3 hours before pitch time.
+        anti_pattern: "Neue Features bis 5 Minuten vor dem Pitch. Dann mit einem buggy Demo pitchen."
+        blocking: false
+
+      - id: external_pitch_test
+        title: "Externer Pitch-Smoke-Test durchgeführt"
+        description: >
+          Wenn jemand außerhalb des Teams nach dem Pitch nicht sagen kann
+          worum es geht, ist der Pitch nicht gut genug. Egal wie gut die Lösung ist.
+        prompt: >
+          Find someone outside the team (another participant, an organizer).
+          Present the pitch to them. After 2 minutes: ask them:
+          "What problem does this solve? For whom? Why does it matter?"
+          If they can't answer: the pitch needs work. Iterate.
+        anti_pattern: "Nur intern testen. Alle im Team wissen was gemeint ist – externe nicht."
+        blocking: false
+
+      - id: demo_fallback
+        title: "Demo-Fallback vorhanden (Video/Screenshots)"
+        description: >
+          Live-Demos scheitern. Immer der falsche Moment. Ein Video als
+          Backup ist kein Eingeständnis von Schwäche – es ist Professionalität.
+        prompt: >
+          Ask: "Is there a demo video or screenshot sequence ready as a fallback?
+          If the live demo fails, can you still show what the product does?"
+          If not: block and ask the team to record a short screen capture NOW.
+        anti_pattern: "Darauf vertrauen, dass die Live-Demo funktioniert. Murphy's Law gilt immer beim Pitch."
+        blocking: true
+
+  # ── 5. POST-HACKATHON ───────────────────────────────────────────────────────
+  post_hackathon:
+    label: "Post-Hackathon Debrief"
+    emoji: "🔄"
+    description: "Innerhalb von 48 Stunden. Nicht eine Woche später."
+    blocking: false
+    checks:
+
+      - id: hot_debrief
+        title: "Hot Debrief innerhalb von 48 Stunden"
+        description: >
+          Die wertvollsten Learnings verflüchtigen sich schnell.
+          Ein kurzer Debrief direkt danach ist 10x wertvoller als
+          eine ausführliche Retro eine Woche später.
+        prompt: >
+          Facilitate a quick debrief with these questions:
+          1. "What would we do differently in hour 1?"
+          2. "What was our biggest time waster?"
+          3. "What worked surprisingly well?"
+          4. "What should go into the AIM?"
+          Document answers and update AIM.yaml accordingly.
+        anti_pattern: "Sagen 'wir machen die Retro nächste Woche' und sie dann nie machen."
+        blocking: false
+
+# ─── AI TOOL USAGE ─────────────────────────────────────────────────────────────
+ai_principles:
+  label: "AI Tool Usage"
+  emoji: "🤖"
+  description: "Wie wir AI-Tools im Hackathon einsetzen."
+  principles:
+    - id: copilot_not_autopilot
+      title: "AI als Copilot, nicht Autopilot"
+      description: >
+        AI bringt uns wirklich nach vorne wenn wir verstehen was sie tut
+        und aktiv in die Prompts eingreifen. Kein AI-Output geht ungereviewt
+        in den Stack.
+      rule: "Wer promptet, versteht was rauskommt. Immer."
+
+    - id: review_all_output
+      title: "Kein AI-Output ungereviewt in den Stack"
+      description: >
+        Generierter Code wird gelesen, verstanden und erst dann committed.
+        'Looks good to me' ist kein Review.
+      rule: "Jedes AI-generierte File wird vor dem Commit gelesen."
